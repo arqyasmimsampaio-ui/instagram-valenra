@@ -1,0 +1,16 @@
+name: Testar conexao com o Instagram
+on:
+  workflow_dispatch:
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ler dados da conta (nao publica nada)
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        run: |
+          RESP=$(curl -s -G "https://graph.facebook.com/v23.0/$IG_USER_ID" --data-urlencode "fields=username,media_count,followers_count" --data-urlencode "access_token=$IG_ACCESS_TOKEN")
+          echo "$RESP"
+          echo "$RESP" | grep -q '"username"' || { echo "FALHOU: verifique o token"; exit 1; }
+          echo "CONEXAO OK"
