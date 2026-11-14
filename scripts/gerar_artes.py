@@ -15,6 +15,7 @@ DOURADO = (191, 155, 90)
 TEXTO = (60, 45, 35)
 FONTE = "marca/fonte.ttf"
 LOGO = "marca/logo.png"
+ARTE_VERSAO = "2"  # mude este numero para refazer todas as artes da fila
 LOGO_MASCARA = "marca/logo_mascara.b64"  # logo da Valenra em texto (usado se nao houver logo.png)
 
 
@@ -72,8 +73,8 @@ def logo_canto(img):
     img.paste(lg, (W - lg.width - 40, 40), lg)
 
 
-def arte(caminho, titulo=None):
-    img = ImageOps.fit(ImageOps.exif_transpose(Image.open(caminho)).convert("RGB"), (W, H))
+def arte(caminho, titulo=None, centro_y=0.5):
+    img = ImageOps.fit(ImageOps.exif_transpose(Image.open(caminho)).convert("RGB"), (W, H), centering=(0.5, centro_y))
     if titulo:
         d = ImageDraw.Draw(img, "RGBA")
         tam = 64
@@ -100,7 +101,10 @@ def main():
         return
     for pasta in sorted(os.listdir("fila")):
         b = f"fila/{pasta}"
-        if not os.path.isdir(b) or glob.glob(f"{b}/arte*.jpg"):
+        if not os.path.isdir(b):
+            continue
+        marca_v = f"{b}/arte_versao.txt"
+        if glob.glob(f"{b}/arte*.jpg") and os.path.exists(marca_v) and open(marca_v).read().strip() == ARTE_VERSAO:
             continue
         fotos = fotos_da_pasta(b)
         if not fotos:
@@ -109,8 +113,14 @@ def main():
         titulo = ""
         if os.path.exists(f"{b}/titulo.txt"):
             titulo = open(f"{b}/titulo.txt", encoding="utf-8").read().strip()
+        for velha in glob.glob(f"{b}/arte*.jpg"):
+            os.remove(velha)
+        ia = os.path.exists(f"{b}/pedido.txt")
         for i, foto in enumerate(fotos, start=1):
-            arte(foto, titulo if i == 1 else None).save(f"{b}/arte{i}.jpg", "JPEG", quality=92)
+            # foto da modelo IA: enquadra mais para baixo para o pingente nao ficar atras da faixa
+            centro = 0.95 if (ia and i == 1) else 0.5
+            arte(foto, titulo if i == 1 else None, centro).save(f"{b}/arte{i}.jpg", "JPEG", quality=92)
+        open(marca_v, "w").write(ARTE_VERSAO)
         print(f"Artes geradas: {pasta} ({len(fotos)} imagem(ns))")
 
 
