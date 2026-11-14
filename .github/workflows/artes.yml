@@ -14,7 +14,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pillow
+      - run: pip install pillow requests
+      - name: Gerar fotos com modelo IA (pastas com pedido.txt)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_IMAGE_MODEL: ${{ vars.OPENAI_IMAGE_MODEL }}
+        run: python scripts/gerar_modelo.py
       - name: Baixar fonte Playfair Display (se não houver)
         run: |
           [ -f marca/fonte.ttf ] || curl -sSL -o marca/fonte.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf"
