@@ -15,7 +15,7 @@ DOURADO = (191, 155, 90)
 TEXTO = (60, 45, 35)
 FONTE = "marca/fonte.ttf"
 LOGO = "marca/logo.png"
-ARTE_VERSAO = "2"  # mude este numero para refazer todas as artes da fila
+ARTE_VERSAO = "3"  # mude este numero para refazer todas as artes da fila
 LOGO_MASCARA = "marca/logo_mascara.b64"  # logo da Valenra em texto (usado se nao houver logo.png)
 
 
@@ -96,6 +96,22 @@ def arte(caminho, titulo=None, centro_y=0.5):
     return img
 
 
+def arte_peca(caminho, titulo=None):
+    """Foto da peca (fornecedor, baixa resolucao): centralizada sobre fundo nude, sem esticar demais."""
+    fundo = Image.new("RGB", (W, H), (245, 238, 230))
+    p = ImageOps.exif_transpose(Image.open(caminho)).convert("RGB")
+    limite_h = H - 420 if titulo else H - 300
+    escala = min(760 / p.width, (limite_h - 230) / p.height)
+    p = p.resize((int(p.width * escala), int(p.height * escala)), Image.LANCZOS)
+    y = 230 + (limite_h - 230 - p.height) // 2 if titulo else (H - p.height) // 2
+    fundo.paste(p, ((W - p.width) // 2, max(230, y)))
+    d = ImageDraw.Draw(fundo, "RGBA")
+    d.rectangle([40, 40, W - 40, H - 40], outline=DOURADO, width=2)
+    caminho_tmp = "/tmp/_peca.jpg"
+    fundo.save(caminho_tmp, "JPEG", quality=95)
+    return arte(caminho_tmp, titulo)
+
+
 def main():
     if not os.path.isdir("fila"):
         return
@@ -117,9 +133,16 @@ def main():
             os.remove(velha)
         ia = os.path.exists(f"{b}/pedido.txt")
         for i, foto in enumerate(fotos, start=1):
-            # foto da modelo IA: enquadra mais para baixo para o pingente nao ficar atras da faixa
-            centro = 0.95 if (ia and i == 1) else 0.5
-            arte(foto, titulo if i == 1 else None, centro).save(f"{b}/arte{i}.jpg", "JPEG", quality=92)
+            if ia:
+                # post com modelo IA: foto 1 limpa (so logo, pingente visivel);
+                # o titulo vai na foto da peca real, sobre fundo nude
+                if i == 1:
+                    img = arte(foto, None, 1.0)
+                else:
+                    img = arte_peca(foto, titulo if i == 2 else None)
+            else:
+                img = arte(foto, titulo if i == 1 else None)
+            img.save(f"{b}/arte{i}.jpg", "JPEG", quality=92)
         open(marca_v, "w").write(ARTE_VERSAO)
         print(f"Artes geradas: {pasta} ({len(fotos)} imagem(ns))")
 
