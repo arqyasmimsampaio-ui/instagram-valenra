@@ -3,6 +3,7 @@
 Nome da pasta = data e hora (Brasília): AAAA-MM-DD_HHMM  ex.: 2026-12-01_1900
 1 arte  -> post de foto
 2 a 10  -> carrossel
+video.mp4 -> reels (capa.jpg vira a capa, se existir)
 """
 import os, re, sys, time, glob, shutil, datetime as dt
 from zoneinfo import ZoneInfo
@@ -28,8 +29,8 @@ def criar(dados):
     return r["id"]
 
 
-def aguardar(cid):
-    for _ in range(24):
+def aguardar(cid, tentativas=24):
+    for _ in range(tentativas):
         s = requests.get(f"{API}/{cid}", params={"fields": "status_code", "access_token": TOKEN}, timeout=60).json()
         st = s.get("status_code")
         if st == "FINISHED":
@@ -57,6 +58,32 @@ def publicar_pasta(b, artes, legenda):
     return p["id"]
 
 
+def publicar_reels(b, video, legenda):
+    base = {"media_type": "REELS", "caption": legenda, "share_to_feed": "true"}
+    if os.path.exists(f"{b}/capa.jpg"):
+        base["cover_url"] = url_publica(f"{b}/capa.jpg")
+    try:
+        # envio direto do arquivo (nao depende do link do GitHub)
+        cid = criar(dict(base, upload_type="resumable"))
+        tam = os.path.getsize(video)
+        with open(video, "rb") as fh:
+            r = requests.post(
+                f"https://rupload.facebook.com/ig-api-upload/v23.0/{cid}",
+                headers={"Authorization": f"OAuth {TOKEN}", "offset": "0", "file_size": str(tam)},
+                data=fh, timeout=600,
+            )
+        if not r.ok or not r.json().get("success"):
+            raise RuntimeError(f"upload do video falhou: {r.status_code} {r.text[:300]}")
+    except Exception as e:
+        print("Envio direto falhou, tentando pelo link publico:", e)
+        cid = criar(dict(base, video_url=url_publica(video)))
+    aguardar(cid, tentativas=72)
+    p = requests.post(f"{API}/{USER}/media_publish", data={"creation_id": cid, "access_token": TOKEN}, timeout=60).json()
+    if "id" not in p:
+        raise RuntimeError(f"Erro ao publicar reels: {p}")
+    return p["id"]
+
+
 def main():
     agora = dt.datetime.now(TZ)
     erros = 0
@@ -70,6 +97,17 @@ def main():
         except ValueError:
             continue  # pastas de exemplo ou com nome fora do padrão são ignoradas
         if quando > agora:
+            continue
+        videos = sorted(glob.glob(f"{b}/*.mp4"))
+        if videos:
+            legenda = open(f"{b}/legenda.txt", encoding="utf-8").read().strip() if os.path.exists(f"{b}/legenda.txt") else ""
+            try:
+                pid = publicar_reels(b, videos[0], legenda)
+                print(f"Reels publicado: {pasta} -> {pid}")
+                shutil.move(b, f"publicados/{pasta}")
+            except Exception as e:
+                erros += 1
+                print(f"FALHOU {pasta}: {e}")
             continue
         artes = sorted(glob.glob(f"{b}/arte*.jpg"), key=lambda p: int(re.findall(r"\d+", os.path.basename(p))[0]))
         if not artes:
