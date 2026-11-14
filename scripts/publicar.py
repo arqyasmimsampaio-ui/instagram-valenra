@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import requests
 
 TZ = ZoneInfo("America/Sao_Paulo")
-API = "https://graph.instagram.com/v23.0"
+API = "https://graph.facebook.com/v23.0"  # token de usuario do sistema (login unificado), nao expira
 TOKEN = os.environ["IG_ACCESS_TOKEN"]
 USER = os.environ["IG_USER_ID"]
 REPO = os.environ["GITHUB_REPOSITORY"]
