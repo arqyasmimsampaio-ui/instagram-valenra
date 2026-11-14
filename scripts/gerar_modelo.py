@@ -12,7 +12,7 @@ from PIL import Image
 
 API = "https://api.openai.com/v1/images/edits"
 KEY = os.environ.get("OPENAI_API_KEY", "")
-MODELO_IA = os.environ.get("OPENAI_IMAGE_MODEL") or "gpt-image-1"
+MODELO_IA = os.environ.get("OPENAI_IMAGE_MODEL") or "gpt-image-2.6-sunburst"
 
 PROMPT_BASE = (
     "Fotografia editorial realista para catalogo de semijoias, estilo minimalista e elegante, "
@@ -76,15 +76,26 @@ def gerar(b):
     files.append(("image[]", ("peca.png", peca, "image/png")))
     data = {"model": MODELO_IA, "prompt": PROMPT_BASE + cena, "size": "1024x1536",
             "quality": "high", "input_fidelity": "high", "n": "1"}
-    try:
-        j = requests.post(API, headers={"Authorization": f"Bearer {KEY}"}, data=data, files=files, timeout=300).json()
-    except Exception as e:
-        print(f"{b}: falha ao chamar a OpenAI: {e}")
-        return False
+    j = {}
+    for _ in range(4):
+        try:
+            j = requests.post(API, headers={"Authorization": f"Bearer {KEY}"}, data=data, files=files, timeout=300).json()
+        except Exception as e:
+            print(f"{b}: falha ao chamar a OpenAI: {e}")
+            return False
+        erro = j.get("error") or {}
+        # se o modelo nao aceitar algum parametro opcional, tira e tenta de novo
+        if erro.get("param") in ("input_fidelity", "quality", "size") and erro.get("param") in data:
+            print(f"{b}: removendo parametro nao suportado: {erro.get('param')}")
+            data.pop(erro["param"])
+            continue
+        break
     if "data" not in j:
         print(f"{b}: erro da OpenAI: {j.get('error', j)}")
         return False
-    img = Image.open(io.BytesIO(base64.b64decode(j["data"][0]["b64_json"]))).convert("RGB")
+    item = j["data"][0]
+    bruto = base64.b64decode(item["b64_json"]) if item.get("b64_json") else requests.get(item["url"], timeout=120).content
+    img = Image.open(io.BytesIO(bruto)).convert("RGB")
     img.save(f"{b}/foto1.jpg", "JPEG", quality=95)
     for nome in ("peca.jpg", "peca.jpeg", "peca.png"):
         if os.path.exists(f"{b}/{nome}"):
