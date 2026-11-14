@@ -26,7 +26,10 @@ PROMPT_BASE = (
 
 
 def ler_ref(caminho):
-    im = Image.open(caminho).convert("RGB")
+    if caminho.endswith(".b64"):
+        im = Image.open(io.BytesIO(base64.b64decode(open(caminho).read()))).convert("RGB")
+    else:
+        im = Image.open(caminho).convert("RGB")
     im.thumbnail((1024, 1024))
     buf = io.BytesIO()
     im.save(buf, "JPEG", quality=90)
@@ -64,7 +67,7 @@ def gerar(b):
     num = m.group(1) if m else "1"
     cena = " ".join(linhas[1:] if m else linhas).strip() or "close no colo, sorriso leve"
     pasta_ref = f"marca/modelos/modelo{num}"
-    refs = sorted(p for p in glob.glob(f"{pasta_ref}/*") if p.lower().endswith((".jpg", ".jpeg", ".png", ".webp")))[:4]
+    refs = sorted(p for p in glob.glob(f"{pasta_ref}/*") if p.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".b64")))[:4]
     peca = foto_peca(b)
     if not refs or peca is None:
         print(f"{b}: falta referencia da modelo {num} ou peca.jpg")
