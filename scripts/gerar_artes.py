@@ -6,7 +6,7 @@ Em cada pasta da fila:
   legenda.txt  -> legenda do post
 Gera: arte1.jpg, arte2.jpg ...
 """
-import os, re, glob
+import os, re, io, glob, base64
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 W, H = 1080, 1350
@@ -15,6 +15,7 @@ DOURADO = (191, 155, 90)
 TEXTO = (60, 45, 35)
 FONTE = "marca/fonte.ttf"
 LOGO = "marca/logo.png"
+LOGO_MASCARA = "marca/logo_mascara.b64"  # logo da Valenra em texto (usado se nao houver logo.png)
 
 
 def fotos_da_pasta(b):
@@ -52,11 +53,22 @@ def quebrar(d, texto, f, largura):
     return linhas
 
 
+def carregar_logo():
+    if os.path.exists(LOGO):
+        return Image.open(LOGO).convert("RGBA")
+    if os.path.exists(LOGO_MASCARA):
+        mascara = Image.open(io.BytesIO(base64.b64decode(open(LOGO_MASCARA).read()))).convert("L")
+        lg = Image.new("RGBA", mascara.size, DOURADO + (255,))
+        lg.putalpha(mascara)
+        return lg
+    return None
+
+
 def logo_canto(img):
-    if not os.path.exists(LOGO):
+    lg = carregar_logo()
+    if lg is None:
         return
-    lg = Image.open(LOGO).convert("RGBA")
-    lg.thumbnail((180, 180))
+    lg.thumbnail((200, 200))
     img.paste(lg, (W - lg.width - 40, 40), lg)
 
 
