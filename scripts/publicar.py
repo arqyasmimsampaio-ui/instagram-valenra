@@ -75,9 +75,15 @@ def main():
         if not artes:
             print("Ainda sem arte:", pasta)
             continue
+        ia = os.path.exists(f"{b}/pedido.txt")
+        if ia and not os.path.exists(f"{b}/aprovado.txt"):
+            print("Aguardando aprovacao (foto com modelo IA):", pasta)
+            continue
         legenda = ""
         if os.path.exists(f"{b}/legenda.txt"):
             legenda = open(f"{b}/legenda.txt", encoding="utf-8").read().strip()
+        if ia:
+            legenda += "\n\nImagem ilustrativa criada com IA. A peca real aparece na foto seguinte."
         try:
             pid = publicar_pasta(b, artes, legenda)
             print(f"Publicado: {pasta} -> post {pid}")
