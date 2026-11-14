@@ -33,6 +33,19 @@ def ler_ref(caminho):
     return buf.getvalue()
 
 
+def baixar_peca(b):
+    """Se houver peca_url.txt (link da foto do fornecedor), baixa como peca.jpg."""
+    if os.path.exists(f"{b}/peca_url.txt") and not glob.glob(f"{b}/peca.*"):
+        url = open(f"{b}/peca_url.txt", encoding="utf-8").read().strip()
+        try:
+            r = requests.get(url, timeout=60, headers={"User-Agent": "Mozilla/5.0"})
+            r.raise_for_status()
+            Image.open(io.BytesIO(r.content)).convert("RGB").save(f"{b}/peca.jpg", "JPEG", quality=95)
+            print(f"{b}: foto da peca baixada do fornecedor")
+        except Exception as e:
+            print(f"{b}: nao consegui baixar a foto da peca: {e}")
+
+
 def foto_peca(b):
     for nome in ("peca.jpg", "peca.jpeg", "peca.png"):
         if os.path.exists(f"{b}/{nome}"):
@@ -45,6 +58,7 @@ def foto_peca(b):
 
 
 def gerar(b):
+    baixar_peca(b)
     linhas = open(f"{b}/pedido.txt", encoding="utf-8").read().strip().splitlines()
     m = re.search(r"modelo\s*:?\s*(\d+)", linhas[0].lower()) if linhas else None
     num = m.group(1) if m else "1"
