@@ -216,7 +216,11 @@ def processar_fila(raiz="fila"):
         preco: R$ 45                      (opcional, so split_chocolate)
         opcoes: fw=840,fh=840,topo_min=740 (opcional, numeros extras do estilo)
     """
-    import glob, subprocess
+    import glob, subprocess, shutil
+    FFMPEG = shutil.which("ffmpeg")
+    if not FFMPEG:
+        import imageio_ffmpeg
+        FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
     if not os.path.isdir(raiz):
         return
     for pasta in sorted(os.listdir(raiz)):
@@ -230,7 +234,7 @@ def processar_fila(raiz="fila"):
                 k, v = linha.split(":", 1)
                 cfg[k.strip().lower()] = v.strip()
         quadro = os.path.join(b, "_quadro.jpg")
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", cfg.get("segundo", "1"), "-i", videos[0],
+        subprocess.run([FFMPEG, "-v", "error", "-y", "-ss", cfg.get("segundo", "1"), "-i", videos[0],
                         "-frames:v", "1", "-q:v", "1", quadro], check=True)
         if cfg.get("recorte"):
             x1, y1, x2, y2 = [int(n) for n in cfg["recorte"].split(",")]
