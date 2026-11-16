@@ -1,6 +1,0 @@
-estilo: moldura
-titulo: Tá na *hora*|de escolher o seu
-apoio: Relógio de brincos
-segundo: 4.5
-recorte: 10,450,1070,1490
-opcoes: fw=840,fh=840,topo_min=740
