@@ -35,6 +35,9 @@ jobs:
           [ -f fonts/Jost.ttf ] || curl -sSL -o fonts/Jost.ttf "$G/jost/Jost%5Bwght%5D.ttf"
       - name: Gerar capas de reels (pastas com video + capa.txt)
         run: VALENRA_FONTES=fonts python scripts/capa_reels.py --fila
+      - name: Montagens especiais (scripts/montar_*.py)
+        run: |
+          for s in scripts/montar_*.py; do [ -f "$s" ] && VALENRA_FONTES=fonts python "$s"; done
       - name: Salvar artes
         run: |
           git config user.name "robo-arte"
