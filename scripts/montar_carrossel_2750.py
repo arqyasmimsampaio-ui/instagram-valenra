@@ -112,7 +112,7 @@ def final():
 
 
 if __name__ == "__main__":
-    if os.path.exists(f"{OUT}/arte1.jpg"):
+    if os.path.exists(f"{OUT}/arte1.jpg") or os.path.isdir("publicados/2026-11-16_1200"):
         sys.exit(0)
     os.makedirs(OUT, exist_ok=True)
     slides = [capa(), peca(BRINCO, "Brinco *Max Botton*", "dourado liso", 0.38, "2/5"),
