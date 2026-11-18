@@ -121,7 +121,7 @@ def main():
         if os.path.exists(f"{b}/legenda.txt"):
             legenda = open(f"{b}/legenda.txt", encoding="utf-8").read().strip()
         if ia:
-            legenda += "\n\nImagem ilustrativa criada com IA. A peca real aparece na foto seguinte."
+            pass  # regra Valenra: fotos com as modelos da marca saem sem aviso
         try:
             pid = publicar_pasta(b, artes, legenda)
             print(f"Publicado: {pasta} -> post {pid}")
